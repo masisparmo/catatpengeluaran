@@ -177,6 +177,23 @@
         </footer>
     </div>
 
+    <!-- Modal Sambutan Awal -->
+    <div id="welcomeModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4">Selamat Datang!</h2>
+            <p class="mb-4 text-gray-700">Aplikasi ini menggunakan AI Gemini untuk mempermudah pencatatan via suara dan scan struk.</p>
+            <p class="mb-6 text-gray-700">Karena di-hosting di GitHub Pages, fitur AI otomatis memerlukan Kunci API Gemini dari Anda. Silakan pilih salah satu opsi di bawah:</p>
+            <div class="space-y-4">
+                <button id="welcomeApiBtn" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                    Konfigurasi Kunci API (Disarankan)
+                </button>
+                <button id="welcomeManualBtn" class="w-full bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                    Gunakan Alternatif (Salin-Tempel Manual)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal untuk Panduan Setup Google Sheet -->
     <div id="setupModal" class="modal-overlay">
         <div class="modal-content">
@@ -271,17 +288,17 @@
             
             <div class="space-y-4">
                 <div class="border rounded-lg p-4">
-                    <label for="api-standard" class="flex items-center cursor-pointer">
-                        <input type="radio" id="api-standard" name="api-choice" value="standard" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <span class="ml-3 font-medium text-gray-900">Gunakan Akun Standar (Disarankan)</span>
+                    <label for="api-manual" class="flex items-center cursor-pointer">
+                        <input type="radio" id="api-manual" name="api-choice" value="manual" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <span class="ml-3 font-medium text-gray-900">Gunakan Alternatif Manual (Tanpa Kunci API)</span>
                     </label>
-                    <p class="text-sm text-gray-500 ml-7 mt-1">Pilihan termudah, tidak memerlukan pengaturan apa pun. Langsung siap pakai.</p>
+                    <p class="text-sm text-gray-500 ml-7 mt-1">Aplikasi akan memandu Anda untuk menyalin-tempel data ke akun Gemini (Google) Anda.</p>
                 </div>
 
                 <div class="border rounded-lg p-4">
                     <label for="api-custom" class="flex items-center cursor-pointer">
                         <input type="radio" id="api-custom" name="api-choice" value="custom" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <span class="ml-3 font-medium text-gray-900">Gunakan Kunci API Pribadi (Lanjutan)</span>
+                        <span class="ml-3 font-medium text-gray-900">Gunakan Kunci API Pribadi (Otomatis)</span>
                     </label>
                     <p class="text-sm text-gray-500 ml-7 mt-1">Untuk pengguna yang memiliki Kunci API Gemini sendiri.</p>
                     <div id="custom-api-section" class="hidden ml-7 mt-4 space-y-3">
@@ -326,6 +343,11 @@
         const loaderText = document.getElementById('loader-text');
         const statusMessage = document.getElementById('statusMessage');
         
+        // Modal Welcome
+        const welcomeModal = document.getElementById('welcomeModal');
+        const welcomeApiBtn = document.getElementById('welcomeApiBtn');
+        const welcomeManualBtn = document.getElementById('welcomeManualBtn');
+
         // Modal Setup Sheet
         const setupModal = document.getElementById('setupModal');
         const closeModalBtn = document.getElementById('closeSetupModalBtn');
@@ -337,7 +359,7 @@
         const apiSettingsBtn = document.getElementById('apiSettingsBtn');
         const apiModal = document.getElementById('apiModal');
         const closeApiModalBtn = document.getElementById('closeApiModalBtn');
-        const apiStandardRadio = document.getElementById('api-standard');
+        const apiManualRadio = document.getElementById('api-manual');
         const apiCustomRadio = document.getElementById('api-custom');
         const customApiSection = document.getElementById('custom-api-section');
         const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
@@ -351,9 +373,16 @@
             dateInput.valueAsDate = new Date();
         }
         initializeApiSettings();
+        checkFirstVisit();
 
 
         // --- FUNGSI UTAMA ---
+        function checkFirstVisit() {
+            if (!localStorage.getItem('hasVisited')) {
+                welcomeModal.classList.add('show');
+            }
+        }
+
         async function saveDataToSheet(event) {
             event.preventDefault();
             if (APPS_SCRIPT_URL === 'MASUKKAN_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI') {
@@ -415,6 +444,13 @@
         }
 
         function startSpeechRecognition() {
+            const apiChoice = localStorage.getItem('geminiApiChoice') || 'manual';
+            if (apiChoice === 'manual') {
+                alert('Fitur ini memerlukan Kunci API. Silakan buka Pengaturan (ikon gerigi) untuk mengonfigurasinya, atau gunakan akun Gemini Anda secara manual.');
+                window.open('https://gemini.google.com', '_blank');
+                return;
+            }
+
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
                 showStatus('Maaf, browser Anda tidak mendukung input suara.', 'error');
@@ -442,6 +478,13 @@
         }
 
         function handleReceiptUpload(event) {
+            const apiChoice = localStorage.getItem('geminiApiChoice') || 'manual';
+            if (apiChoice === 'manual') {
+                alert('Fitur ini memerlukan Kunci API. Silakan buka Pengaturan (ikon gerigi) untuk mengonfigurasinya, atau upload struk Anda secara manual di akun Gemini.');
+                window.open('https://gemini.google.com', '_blank');
+                return;
+            }
+
             const file = event.target.files[0];
             if (!file) return;
             if (!file.type.startsWith('image/')) {
@@ -468,16 +511,11 @@
         }
 
         async function callGemini(prompt, base64ImageData = null) {
-            const apiChoice = localStorage.getItem('geminiApiChoice') || 'standard';
-            let geminiApiKey = ""; // Default host environment key
-            
-            if (apiChoice === 'custom') {
-                geminiApiKey = localStorage.getItem('userGeminiApiKey') || "";
-                if (!geminiApiKey) {
-                    showStatus('Kunci API Pribadi belum diatur. Buka Pengaturan API.', 'error');
-                    hideLoader(false);
-                    return;
-                }
+            const geminiApiKey = localStorage.getItem('userGeminiApiKey') || "";
+            if (!geminiApiKey) {
+                showStatus('Kunci API Pribadi belum diatur. Buka Pengaturan API.', 'error');
+                hideLoader(false);
+                return;
             }
 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
@@ -619,7 +657,7 @@
         }
         
         function initializeApiSettings() {
-            const choice = localStorage.getItem('geminiApiChoice') || 'standard';
+            const choice = localStorage.getItem('geminiApiChoice') || 'manual';
             const savedKey = localStorage.getItem('userGeminiApiKey') || '';
 
             if (choice === 'custom') {
@@ -627,7 +665,7 @@
                 customApiSection.style.display = 'block';
                 geminiApiKeyInput.value = savedKey;
             } else {
-                apiStandardRadio.checked = true;
+                apiManualRadio.checked = true;
                 customApiSection.style.display = 'none';
             }
         }
@@ -696,6 +734,19 @@
             }
         });
 
+        // Welcome Modal Listeners
+        if (welcomeApiBtn) welcomeApiBtn.addEventListener('click', () => {
+            welcomeModal.classList.remove('show');
+            apiModal.classList.add('show');
+            localStorage.setItem('hasVisited', 'true');
+        });
+        if (welcomeManualBtn) welcomeManualBtn.addEventListener('click', () => {
+            localStorage.setItem('geminiApiChoice', 'manual');
+            localStorage.setItem('hasVisited', 'true');
+            welcomeModal.classList.remove('show');
+            showStatus('Mode manual dipilih. Anda akan diarahkan ke Gemini.', 'info');
+        });
+
         // API Modal Listeners
         if(apiSettingsBtn) apiSettingsBtn.addEventListener('click', () => apiModal.classList.add('show'));
         if(closeApiModalBtn) closeApiModalBtn.addEventListener('click', () => apiModal.classList.remove('show'));
@@ -704,9 +755,9 @@
                 apiModal.classList.remove('show');
             }
         });
-        if(apiStandardRadio) apiStandardRadio.addEventListener('change', () => {
+        if(apiManualRadio) apiManualRadio.addEventListener('change', () => {
             customApiSection.style.display = 'none';
-            localStorage.setItem('geminiApiChoice', 'standard');
+            localStorage.setItem('geminiApiChoice', 'manual');
         });
         if(apiCustomRadio) apiCustomRadio.addEventListener('change', () => {
             customApiSection.style.display = 'block';
