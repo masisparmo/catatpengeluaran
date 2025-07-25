@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pintar Pencatat Pengeluaran</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #receiptInput {
+            display: none;
+        }
+        /* Styles for Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 650px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #e5e7eb;
+            border-radius: 9999px;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .modal-close-btn:hover {
+            background: #d1d5db;
+        }
+        .code-block {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 250px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #4b5563;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            background-color: #374151;
+        }
+        #progress-bar {
+            transition: width 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-2xl">
+        <header class="text-center mb-8 relative">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Pintar Pencatat Pengeluaran</h1>
+            <p class="text-gray-600 mt-2">Catat pengeluaran Anda dengan mudah melalui suara, upload, atau scan struk.</p>
+             <button id="apiSettingsBtn" class="absolute top-0 right-0 text-gray-500 hover:text-blue-600 transition-colors" title="Pengaturan API">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
+                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1 0 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105 0l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 0-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105 0l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+                </svg>
+            </button>
+        </header>
+
+        <main class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+            <form id="expenseForm" class="space-y-6">
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Pembelian</label>
+                    <input type="date" id="date" name="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div>
+                    <label for="store" class="block text-sm font-medium text-gray-700 mb-1">Toko / Tempat Belanja</label>
+                    <input type="text" id="store" name="store" placeholder="Contoh: Supermarket Sejahtera" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div>
+                    <label for="items" class="block text-sm font-medium text-gray-700 mb-1">Item yang Dibeli (pisahkan dengan koma)</label>
+                    <textarea id="items" name="items" rows="4" placeholder="Contoh: Roti, Susu, Telur" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required></textarea>
+                </div>
+                <div>
+                    <label for="total" class="block text-sm font-medium text-gray-700 mb-1">Total Pengeluaran (Rp)</label>
+                    <input type="number" id="total" name="total" placeholder="Contoh: 75000" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+            </form>
+            
+            <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <button id="recordBtn" class="w-full flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-mic-fill mr-2" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>
+                    Input Suara
+                </button>
+                <button id="uploadBtn" class="w-full flex items-center justify-center bg-teal-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-upload mr-2" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    Upload Struk
+                </button>
+                <input type="file" id="receiptInput" accept="image/*">
+                <button id="scanBtn" class="w-full flex items-center justify-center bg-green-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-fill mr-2" viewBox="0 0 16 16">
+                        <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                        <path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z"/>
+                    </svg>
+                    Scan Kamera
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 text-center mt-2">*Fitur "Scan Kamera" dioptimalkan untuk perangkat mobile.</p>
+
+            <!-- Progress Bar and Loader Text -->
+            <div id="loader-container" class="hidden mt-6">
+                <p id="loader-text" class="text-center text-gray-600 mb-2"></p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+            <div id="statusMessage" class="mt-6 text-center text-lg"></div>
+
+            <div class="mt-6 border-t pt-6 space-y-4">
+                 <button id="saveBtn" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors duration-300 text-lg">
+                    Simpan ke Google Sheet
+                </button>
+                 <button id="csvBtn" class="w-full bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-300 text-lg">
+                    Simpan sebagai File CSV (Lokal)
+                </button>
+            </div>
+        </main>
+
+        <footer class="mt-8 text-center text-gray-500">
+            <p>&copy; 2025 - ISPARMO powered by Gemini Ai</p>
+        </footer>
+    </div>
+
+    <!-- Modal untuk Panduan Setup Google Sheet -->
+    <div id="setupModal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="closeSetupModalBtn" class="modal-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <h2 class="text-2xl font-bold mb-4">Setup Google Sheet</h2>
+            <p class="mb-6 text-gray-600">Ikuti langkah-langkah berikut untuk menghubungkan aplikasi ini ke Google Sheet Anda.</p>
+            <div class="space-y-5 text-sm">
+                 <div>
+                    <h3 class="font-bold text-lg">Langkah 1: Siapkan Google Sheet</h3>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 pl-2 text-gray-700">
+                        <li>Buka <a href="https://sheets.google.com/create" target="_blank" class="text-blue-600 hover:underline font-semibold">sheets.google.com</a> dan buat <strong>Spreadsheet baru</strong>.</li>
+                        <li>Anda <strong>tidak perlu</strong> membuat header atau mengganti nama Sheet. Skrip akan melakukannya secara otomatis.</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Langkah 2: Tambahkan Kode Apps Script</h3>
+                    <ol class="list-decimal list-inside mt-2 space-y-2 pl-2 text-gray-700">
+                        <li>Di Google Sheet Anda, klik menu <strong>Ekstensi &gt; Apps Script</strong>.</li>
+                        <li>Hapus semua kode yang ada, lalu salin dan tempel kode di bawah ini:
+                            <div class="code-block mt-2">
+                                <button id="copyCodeBtn" class="copy-btn">Salin</button>
+                                <pre id="appsScriptCodeContainer"><code>function doPost(e) {
+  try {
+    const sheetName = "Pengeluaran";
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      const headers = ["Timestamp", "Tanggal Pembelian", "Toko/Tempat", "Item", "Total Pengeluaran"];
+      sheet.appendRow(headers);
+    }
+
+    const data = JSON.parse(e.postData.contents);
+    const newRow = [
+      new Date(),
+      data.date || "",
+      data.store || "",
+      data.items || "",
+      data.total || ""
+    ];
+    sheet.appendRow(newRow);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({ "status": "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    Logger.log(error);
+    return ContentService
+      .createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</code></pre>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Langkah 3: Deploy dan Beri Izin</h3>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 pl-2 text-gray-700">
+                        <li>Klik tombol biru <strong>Deploy</strong> &gt; <strong>New deployment</strong>.</li>
+                        <li>Klik ikon gerigi (&#9881;), pilih <strong>Web app</strong>.</li>
+                        <li>Di bagian "Who has access", ubah menjadi <strong>Anyone</strong>.</li>
+                        <li>Klik <strong>Deploy</strong>, lalu klik <strong>Authorize access</strong>.</li>
+                        <li>Pilih akun Google Anda, klik <strong>Advanced</strong>, lalu <strong>"Go to ... (unsafe)"</strong>, dan terakhir klik <strong>Allow</strong>.</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Langkah 4: Masukkan URL Anda</h3>
+                    <ol class="list-decimal list-inside mt-2 space-y-2 pl-2 text-gray-700">
+                        <li>Setelah deploy berhasil, salin <strong>Web app URL</strong> yang muncul dan tempel di bawah ini.</li>
+                        <li class="flex flex-col sm:flex-row items-stretch gap-2 mt-2">
+                            <input type="url" id="webAppUrlInput" placeholder="Tempel Web app URL Anda di sini" class="flex-grow w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <button id="saveConfigBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-semibold">Simpan</button>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Pengaturan API Gemini -->
+    <div id="apiModal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="closeApiModalBtn" class="modal-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
+            <h2 class="text-2xl font-bold mb-4">Pengaturan API Gemini</h2>
+            <p class="mb-6 text-gray-600">Pilih metode akses untuk fitur AI (ekstrak suara & struk).</p>
+            
+            <div class="space-y-4">
+                <div class="border rounded-lg p-4">
+                    <label for="api-standard" class="flex items-center cursor-pointer">
+                        <input type="radio" id="api-standard" name="api-choice" value="standard" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <span class="ml-3 font-medium text-gray-900">Gunakan Akun Standar (Disarankan)</span>
+                    </label>
+                    <p class="text-sm text-gray-500 ml-7 mt-1">Pilihan termudah, tidak memerlukan pengaturan apa pun. Langsung siap pakai.</p>
+                </div>
+
+                <div class="border rounded-lg p-4">
+                    <label for="api-custom" class="flex items-center cursor-pointer">
+                        <input type="radio" id="api-custom" name="api-choice" value="custom" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <span class="ml-3 font-medium text-gray-900">Gunakan Kunci API Pribadi (Lanjutan)</span>
+                    </label>
+                    <p class="text-sm text-gray-500 ml-7 mt-1">Untuk pengguna yang memiliki Kunci API Gemini sendiri.</p>
+                    <div id="custom-api-section" class="hidden ml-7 mt-4 space-y-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Cara Mendapatkan Kunci API:</h4>
+                            <ol class="list-decimal list-inside mt-1 text-gray-600 space-y-1">
+                                <li>Kunjungi <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 hover:underline">Google AI Studio</a>.</li>
+                                <li>Klik "<strong>Create API key in new project</strong>".</li>
+                                <li>Salin kunci yang muncul dan tempel di bawah ini.</li>
+                            </ol>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-stretch gap-2">
+                             <input type="password" id="geminiApiKeyInput" placeholder="Tempel Kunci API Gemini Anda" class="flex-grow w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                             <button id="saveApiKeyBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-semibold">Simpan</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- KONFIGURASI ---
+        let APPS_SCRIPT_URL = localStorage.getItem('googleSheetWebAppUrl') || 'MASUKKAN_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI'; 
+        
+        // --- ELEMEN DOM ---
+        const expenseForm = document.getElementById('expenseForm');
+        const dateInput = document.getElementById('date');
+        const storeInput = document.getElementById('store');
+        const itemsInput = document.getElementById('items');
+        const totalInput = document.getElementById('total');
+        const recordBtn = document.getElementById('recordBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const scanBtn = document.getElementById('scanBtn');
+        const receiptInput = document.getElementById('receiptInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const loaderContainer = document.getElementById('loader-container');
+        const progressBar = document.getElementById('progress-bar');
+        const loaderText = document.getElementById('loader-text');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        // Modal Setup Sheet
+        const setupModal = document.getElementById('setupModal');
+        const closeModalBtn = document.getElementById('closeSetupModalBtn');
+        const webAppUrlInput = document.getElementById('webAppUrlInput');
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        const copyCodeBtn = document.getElementById('copyCodeBtn');
+
+        // Modal API Settings
+        const apiSettingsBtn = document.getElementById('apiSettingsBtn');
+        const apiModal = document.getElementById('apiModal');
+        const closeApiModalBtn = document.getElementById('closeApiModalBtn');
+        const apiStandardRadio = document.getElementById('api-standard');
+        const apiCustomRadio = document.getElementById('api-custom');
+        const customApiSection = document.getElementById('custom-api-section');
+        const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+
+
+        let progressInterval;
+
+        // --- INISIALISASI ---
+        if (dateInput) {
+            dateInput.valueAsDate = new Date();
+        }
+        initializeApiSettings();
+
+
+        // --- FUNGSI UTAMA ---
+        async function saveDataToSheet(event) {
+            event.preventDefault();
+            if (APPS_SCRIPT_URL === 'MASUKKAN_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI') {
+                showSetupGuide();
+                return;
+            }
+            if (!expenseForm.checkValidity()) {
+                expenseForm.reportValidity();
+                return;
+            }
+            showLoader('Menyimpan data ke Google Sheet...');
+            const formData = {
+                date: dateInput.value,
+                store: storeInput.value,
+                items: itemsInput.value,
+                total: totalInput.value,
+            };
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                showStatus('Data berhasil disimpan ke Google Sheet!', 'success');
+                expenseForm.reset();
+                if(dateInput) dateInput.valueAsDate = new Date();
+            } catch (error) {
+                console.error('Error saving data to Sheet:', error);
+                showStatus('Terjadi kesalahan saat menyimpan data ke Sheet.', 'error');
+            } finally {
+                hideLoader(true);
+            }
+        }
+        
+        function saveDataAsCSV(event) {
+            event.preventDefault();
+            if (!expenseForm.checkValidity()) {
+                expenseForm.reportValidity();
+                return;
+            }
+            const headers = '"Tanggal Pembelian","Toko/Tempat","Item","Total Pengeluaran"';
+            const values = [
+                `"${dateInput.value}"`,
+                `"${storeInput.value}"`,
+                `"${itemsInput.value.replace(/"/g, '""')}"`,
+                `"${totalInput.value}"`
+            ].join(',');
+            const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + values;
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            const filenameDate = new Date().toISOString().slice(0, 10);
+            link.setAttribute("download", `pengeluaran-${filenameDate}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showStatus('File CSV berhasil diunduh!', 'success');
+        }
+
+        function startSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showStatus('Maaf, browser Anda tidak mendukung input suara.', 'error');
+                return;
+            }
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            recognition.start();
+            showLoader('Mendengarkan...');
+            recognition.onresult = (event) => {
+                const speechResult = event.results[0][0].transcript;
+                if(loaderText) loaderText.textContent = 'Memproses hasil suara...';
+                parseTextWithGemini(speechResult);
+            };
+            recognition.onspeechend = () => {
+                recognition.stop();
+            };
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                showStatus(`Error pengenalan suara: ${event.error}`, 'error');
+                hideLoader(false);
+            };
+        }
+
+        function handleReceiptUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showStatus('Harap pilih file gambar.', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64Image = e.target.result.split(',')[1];
+                showLoader('Menganalisis gambar struk...');
+                parseImageWithGemini(base64Image);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function parseTextWithGemini(text) {
+            const prompt = `Anda adalah asisten entri data yang cerdas. Ekstrak informasi berikut dari teks ini dan berikan dalam format JSON: nama toko, daftar item, dan total harga. Teks: "${text}"`;
+            await callGemini(prompt);
+        }
+
+        async function parseImageWithGemini(base64ImageData) {
+            const prompt = "Anda adalah pemindai struk ahli. Ekstrak nama toko, tanggal transaksi, daftar item yang dibeli, dan jumlah total akhir dari gambar struk ini. Jika tanggal tidak ada, gunakan tanggal hari ini. Berikan output dalam format JSON yang ketat.";
+            await callGemini(prompt, base64ImageData);
+        }
+
+        async function callGemini(prompt, base64ImageData = null) {
+            const apiChoice = localStorage.getItem('geminiApiChoice') || 'standard';
+            let geminiApiKey = ""; // Default host environment key
+            
+            if (apiChoice === 'custom') {
+                geminiApiKey = localStorage.getItem('userGeminiApiKey') || "";
+                if (!geminiApiKey) {
+                    showStatus('Kunci API Pribadi belum diatur. Buka Pengaturan API.', 'error');
+                    hideLoader(false);
+                    return;
+                }
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+            let parts = [{ text: prompt }];
+            if (base64ImageData) {
+                parts.push({ inlineData: { mimeType: "image/jpeg", data: base64ImageData } });
+            }
+            const payload = {
+                contents: [{ role: "user", parts: parts }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            toko: { type: "STRING" },
+                            tanggal: { type: "STRING", description: "Format YYYY-MM-DD" },
+                            items: { type: "ARRAY", items: { type: "STRING" } },
+                            total: { type: "NUMBER" }
+                        },
+                        required: ["toko", "items", "total"]
+                    }
+                }
+            };
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorData.error.message}`);
+                }
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0) {
+                    const jsonText = result.candidates[0].content.parts[0].text;
+                    const data = JSON.parse(jsonText);
+                    populateForm(data);
+                    showStatus('Data berhasil diekstrak. Silakan periksa dan simpan.', 'success');
+                } else {
+                    throw new Error("Tidak ada konten yang valid dalam respons API.");
+                }
+            } catch (error) {
+                console.error('Gemini API error:', error);
+                showStatus(`Gagal memproses data: ${error.message}`, 'error');
+            } finally {
+                hideLoader(true);
+            }
+        }
+
+        function populateForm(data) {
+            if (data.tanggal) {
+                try {
+                    dateInput.value = new Date(data.tanggal).toISOString().split('T')[0];
+                } catch(e) {
+                    console.warn("Format tanggal tidak valid, menggunakan tanggal hari ini:", data.tanggal);
+                    if(dateInput) dateInput.valueAsDate = new Date();
+                }
+            } else {
+                 if(dateInput) dateInput.valueAsDate = new Date();
+            }
+            if(storeInput) storeInput.value = data.toko || '';
+            if(itemsInput) itemsInput.value = data.items ? data.items.join(', ') : '';
+            if(totalInput) totalInput.value = data.total || '';
+        }
+
+        // --- FUNGSI BANTU (HELPER) ---
+        function showLoader(message) {
+            if(statusMessage) statusMessage.style.display = 'none';
+            if(loaderContainer) loaderContainer.classList.remove('hidden');
+            if(loaderText) loaderText.textContent = message;
+            
+            const allButtons = [recordBtn, uploadBtn, scanBtn, saveBtn, csvBtn];
+            allButtons.forEach(btn => {
+                if(btn) btn.disabled = true;
+            });
+
+            let width = 0;
+            if(progressBar) progressBar.style.width = '0%';
+            
+            progressInterval = setInterval(() => {
+                width += Math.random() * 10;
+                if (width > 95) {
+                    width = 95;
+                    clearInterval(progressInterval);
+                }
+                if(progressBar) progressBar.style.width = width + '%';
+            }, 200);
+        }
+
+        function hideLoader(isSuccess) {
+            clearInterval(progressInterval);
+            if(progressBar) progressBar.style.width = isSuccess ? '100%' : progressBar.style.width;
+
+            setTimeout(() => {
+                if(loaderContainer) loaderContainer.classList.add('hidden');
+                if(progressBar) progressBar.style.width = '0%';
+                
+                const allButtons = [recordBtn, uploadBtn, scanBtn, saveBtn, csvBtn];
+                allButtons.forEach(btn => {
+                    if(btn) btn.disabled = false;
+                });
+            }, 500);
+        }
+
+        function showStatus(message, type = 'info') {
+            if(!statusMessage) return;
+            statusMessage.textContent = message;
+            statusMessage.className = 'mt-6 text-center text-lg';
+            if (type === 'success') statusMessage.classList.add('text-green-600');
+            else if (type === 'error') statusMessage.classList.add('text-red-600');
+            statusMessage.style.display = 'block';
+            setTimeout(() => { statusMessage.style.display = 'none'; }, 5000);
+        }
+        
+        function showSetupGuide() {
+            const existingUrl = localStorage.getItem('googleSheetWebAppUrl');
+            if (existingUrl && webAppUrlInput) {
+                webAppUrlInput.value = existingUrl;
+            }
+            if(setupModal) setupModal.classList.add('show');
+        }
+        
+        function hideSetupGuide() {
+            if(setupModal) setupModal.classList.remove('show');
+        }
+
+        function saveConfiguration() {
+            if(!webAppUrlInput) return;
+            const url = webAppUrlInput.value.trim();
+            if (!url || !url.startsWith("https://script.google.com/")) {
+                alert("Harap masukkan URL Web App Google Apps Script yang valid.");
+                return;
+            }
+            localStorage.setItem('googleSheetWebAppUrl', url);
+            APPS_SCRIPT_URL = url;
+            hideSetupGuide();
+            showStatus('Konfigurasi Google Sheet berhasil disimpan!', 'success');
+        }
+        
+        function initializeApiSettings() {
+            const choice = localStorage.getItem('geminiApiChoice') || 'standard';
+            const savedKey = localStorage.getItem('userGeminiApiKey') || '';
+
+            if (choice === 'custom') {
+                apiCustomRadio.checked = true;
+                customApiSection.style.display = 'block';
+                geminiApiKeyInput.value = savedKey;
+            } else {
+                apiStandardRadio.checked = true;
+                customApiSection.style.display = 'none';
+            }
+        }
+
+        function saveApiKey() {
+            const key = geminiApiKeyInput.value.trim();
+            if (!key) {
+                alert('Kunci API tidak boleh kosong.');
+                return;
+            }
+            localStorage.setItem('userGeminiApiKey', key);
+            localStorage.setItem('geminiApiChoice', 'custom');
+            showStatus('Kunci API berhasil disimpan.', 'success');
+            apiModal.classList.remove('show');
+        }
+
+        function copyCode() {
+            const codeContainer = document.getElementById('appsScriptCodeContainer');
+            if(!codeContainer) return;
+            const codeToCopy = codeContainer.innerText;
+            const textArea = document.createElement("textarea");
+            textArea.value = codeToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                if(copyCodeBtn) {
+                    copyCodeBtn.textContent = 'Tersalin!';
+                    setTimeout(() => { copyCodeBtn.textContent = 'Salin'; }, 2000);
+                }
+            } catch (err) {
+                console.error('Gagal menyalin kode', err);
+                alert('Gagal menyalin kode. Silakan salin secara manual.');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // --- EVENT LISTENERS ---
+        if(saveBtn) saveBtn.addEventListener('click', saveDataToSheet);
+        if(csvBtn) csvBtn.addEventListener('click', saveDataAsCSV);
+        if(recordBtn) recordBtn.addEventListener('click', startSpeechRecognition);
+        
+        if(uploadBtn) uploadBtn.addEventListener('click', () => {
+            if(receiptInput) {
+                receiptInput.removeAttribute('capture');
+                receiptInput.click();
+            }
+        });
+
+        if(scanBtn) scanBtn.addEventListener('click', () => {
+            if(receiptInput) {
+                receiptInput.setAttribute('capture', 'environment');
+                receiptInput.click();
+            }
+        });
+
+        if(receiptInput) receiptInput.addEventListener('change', handleReceiptUpload);
+        
+        // Modal Listeners
+        if(closeModalBtn) closeModalBtn.addEventListener('click', hideSetupGuide);
+        if(saveConfigBtn) saveConfigBtn.addEventListener('click', saveConfiguration);
+        if(copyCodeBtn) copyCodeBtn.addEventListener('click', copyCode);
+        if(setupModal) setupModal.addEventListener('click', (e) => {
+            if (e.target === setupModal) {
+                hideSetupGuide();
+            }
+        });
+
+        // API Modal Listeners
+        if(apiSettingsBtn) apiSettingsBtn.addEventListener('click', () => apiModal.classList.add('show'));
+        if(closeApiModalBtn) closeApiModalBtn.addEventListener('click', () => apiModal.classList.remove('show'));
+        if(apiModal) apiModal.addEventListener('click', (e) => {
+            if (e.target === apiModal) {
+                apiModal.classList.remove('show');
+            }
+        });
+        if(apiStandardRadio) apiStandardRadio.addEventListener('change', () => {
+            customApiSection.style.display = 'none';
+            localStorage.setItem('geminiApiChoice', 'standard');
+        });
+        if(apiCustomRadio) apiCustomRadio.addEventListener('change', () => {
+            customApiSection.style.display = 'block';
+        });
+        if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', saveApiKey);
+    });
+    </script>
+</body>
+</html>
