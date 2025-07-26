@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tambahkan library Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -15,98 +17,36 @@
         #receiptInput, #app-container {
             display: none;
         }
-        /* Styles for Modal */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 1rem;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
         }
         .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
+            opacity: 1; visibility: visible;
         }
         .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            max-width: 650px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            transform: scale(0.95);
-            transition: transform 0.3s;
+            background: white; padding: 2rem; border-radius: 1rem; max-width: 650px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; transform: scale(0.95); transition: transform 0.3s;
         }
         .modal-overlay.show .modal-content {
             transform: scale(1);
         }
         .modal-close-btn {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: #e5e7eb;
-            border-radius: 9999px;
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            position: absolute; top: 1rem; right: 1rem; background: #e5e7eb; border-radius: 9999px; padding: 0.5rem; cursor: pointer; transition: background-color 0.2s;
         }
-        .modal-close-btn:hover {
-            background: #d1d5db;
-        }
-        .code-block {
-            background-color: #f3f4f6;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            font-family: monospace;
-            font-size: 0.8rem;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 250px;
-            overflow-y: auto;
-            position: relative;
-        }
-        .copy-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            background-color: #4b5563;
-            color: white;
-            border: none;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
-        .copy-btn:hover {
-            background-color: #374151;
-        }
-        #progress-bar {
-            transition: width 0.3s ease-in-out;
-        }
+        .modal-close-btn:hover { background: #d1d5db; }
+        .code-block { background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 1rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 250px; overflow-y: auto; position: relative; }
+        .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; background-color: #4b5563; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; cursor: pointer; }
+        .copy-btn:hover { background-color: #374151; }
+        #progress-bar { transition: width 0.3s ease-in-out; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-    <div id="app-container" class="container mx-auto p-4 md:p-8 max-w-2xl">
+    <div id="app-container" class="container mx-auto p-4 md:p-8 max-w-4xl">
         <header class="text-center mb-8 relative">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Si Pintar Pencatat Pengeluaran</h1>
             <p class="text-gray-600 mt-2">Catat pengeluaran Anda dengan mudah melalui suara, upload, atau scan struk.</p>
              <button id="apiSettingsBtn" class="absolute top-0 right-0 text-gray-500 hover:text-blue-600 transition-colors" title="Pengaturan API">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
-                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1 0 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105 0l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705-1.987-1.987l-.169-.311a1.464 1.464 0 0 1 0-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105 0l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1 0 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105 0l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705-1.987-1.987l-.169-.311a1.464 1.464 0 0 1 0-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105 0l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg>
             </button>
         </header>
 
@@ -151,26 +91,54 @@
                     Scan Kamera
                 </button>
             </div>
-            <p class="text-xs text-gray-500 text-center mt-2">*Fitur "Scan Kamera" dioptimalkan untuk perangkat mobile.</p>
-
-            <!-- Progress Bar and Loader Text -->
+             <p class="text-xs text-gray-500 text-center mt-2">*Fitur "Scan Kamera" dioptimalkan untuk perangkat mobile.</p>
             <div id="loader-container" class="hidden mt-6">
                 <p id="loader-text" class="text-center text-gray-600 mb-2"></p>
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5"><div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div></div>
             </div>
             <div id="statusMessage" class="mt-6 text-center text-lg"></div>
-
             <div class="mt-6 border-t pt-6 space-y-4">
-                 <button id="saveBtn" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors duration-300 text-lg">
-                    Simpan ke Google Sheet
-                </button>
-                 <button id="csvBtn" class="w-full bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-300 text-lg">
-                    Simpan sebagai File CSV (Lokal)
-                </button>
+                 <button id="saveBtn" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors duration-300 text-lg">Simpan ke Google Sheet</button>
+                 <button id="csvBtn" class="w-full bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-300 text-lg">Simpan sebagai File CSV (Lokal)</button>
             </div>
         </main>
+        
+        <section class="mt-10">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800">Riwayat & Analisis Pengeluaran</h2>
+                <button id="showDataBtn" class="w-full sm:w-auto bg-green-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise mr-2" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                    Muat Ulang Data
+                </button>
+            </div>
+            <div id="dataDisplayContainer" class="hidden bg-white p-6 rounded-2xl shadow-lg space-y-8">
+                <div>
+                     <h3 class="text-xl font-semibold mb-4 text-gray-700">Ringkasan Bulan Ini</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                         <div class="bg-blue-50 p-4 rounded-lg">
+                             <p class="text-sm text-blue-800 font-medium">Total Pengeluaran</p>
+                             <p id="totalMonthly" class="text-2xl font-bold text-blue-900">Rp 0</p>
+                         </div>
+                         <div class="bg-green-50 p-4 rounded-lg">
+                             <p class="text-sm text-green-800 font-medium">Rata-Rata Harian</p>
+                             <p id="averageDaily" class="text-2xl font-bold text-green-900">Rp 0</p>
+                         </div>
+                     </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">Grafik Pengeluaran Harian (Bulan Ini)</h3>
+                    <div class="h-64 relative"><canvas id="expenseChart"></canvas></div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">Tabel Rincian</h3>
+                    <div id="tableContainer" class="overflow-x-auto">
+                    </div>
+                </div>
+            </div>
+             <div id="dataLoader" class="hidden text-center py-10">
+                <p>Memuat data dari Google Sheet...</p>
+            </div>
+        </section>
 
         <footer class="mt-8 text-center text-gray-500">
             <p>&copy; 2025 - ISPARMO powered by Gemini Ai</p>
@@ -200,12 +168,11 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
             </button>
             <h2 class="text-2xl font-bold mb-4">Setup Google Sheet</h2>
-            <p class="mb-6 text-gray-600">Ikuti langkah-langkah berikut untuk menghubungkan aplikasi ini ke Google Sheet Anda.</p>
             <div class="space-y-5 text-sm">
                  <div>
                     <h3 class="font-bold text-lg">Langkah 1: Siapkan Google Sheet</h3>
                     <ol class="list-decimal list-inside mt-2 space-y-1 pl-2 text-gray-700">
-                        <li>Buka <a href="https://docs.google.com/spreadsheets/create" target="_blank" class="text-blue-600 hover:underline font-semibold">https://docs.google.com/spreadsheets/create/a> dan buat <strong>Spreadsheet baru</strong>.</li>
+                        <li>Buka <a href="https://docs.google.com/spreadsheets/create" target="_blank" class="text-blue-600 hover:underline font-semibold">sheets.google.com</a> dan buat <strong>Spreadsheet baru</strong>.</li>
                         <li>Anda <strong>tidak perlu</strong> membuat header atau mengganti nama Sheet. Skrip akan melakukannya secara otomatis.</li>
                     </ol>
                 </div>
@@ -216,7 +183,13 @@
                         <li>Hapus semua kode yang ada, lalu salin dan tempel kode di bawah ini:
                             <div class="code-block mt-2">
                                 <button id="copyCodeBtn" class="copy-btn">Salin</button>
-                                <pre id="appsScriptCodeContainer"><code>function doPost(e) {
+                                <pre id="appsScriptCodeContainer"><code>/**
+ * Script untuk MENERIMA (doPost) dan MENGIRIM (doGet) data 
+ * dari Web App Pencatat Pengeluaran.
+ */
+
+// Fungsi untuk MENYIMPAN data ke Sheet
+function doPost(e) {
   try {
     const sheetName = "Pengeluaran";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -245,6 +218,53 @@
     Logger.log(error);
     return ContentService
       .createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// --- FUNGSI BARU ---
+// Fungsi untuk MENGAMBIL data dari Sheet dan mengirimkannya ke Web App
+function doGet(e) {
+  try {
+    const sheetName = "Pengeluaran";
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+
+    // Jika sheet tidak ada, kembalikan array kosong
+    if (!sheet) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "success", data: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+
+    // Jika hanya ada header (atau kosong), kembalikan array kosong
+    if (values.length <= 1) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "success", data: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const headers = values.shift(); // Ambil baris header dan hapus dari data
+    const data = values.map(row => {
+      const rowObject = {};
+      headers.forEach((header, index) => {
+        rowObject[header] = row[index];
+      });
+      return rowObject;
+    });
+
+    // Kembalikan data dalam format JSON
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "success", data: data }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    Logger.log(error);
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }</code></pre>
@@ -323,36 +343,32 @@
         const progressBar = document.getElementById('progress-bar');
         const loaderText = document.getElementById('loader-text');
         const statusMessage = document.getElementById('statusMessage');
-        
-        // Modal Welcome
         const welcomeModal = document.getElementById('welcomeModal');
         const welcomeApiBtn = document.getElementById('welcomeApiBtn');
         const welcomeManualBtn = document.getElementById('welcomeManualBtn');
-
-        // Modal Setup Sheet
         const setupModal = document.getElementById('setupModal');
         const closeModalBtn = document.getElementById('closeSetupModalBtn');
         const webAppUrlInput = document.getElementById('webAppUrlInput');
         const saveConfigBtn = document.getElementById('saveConfigBtn');
         const copyCodeBtn = document.getElementById('copyCodeBtn');
-
-        // Modal API Settings
         const apiSettingsBtn = document.getElementById('apiSettingsBtn');
         const apiModal = document.getElementById('apiModal');
         const closeApiModalBtn = document.getElementById('closeApiModalBtn');
         const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
         const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
-
+        const showDataBtn = document.getElementById('showDataBtn');
+        const dataDisplayContainer = document.getElementById('dataDisplayContainer');
+        const tableContainer = document.getElementById('tableContainer');
+        const chartCanvas = document.getElementById('expenseChart');
+        const dataLoader = document.getElementById('dataLoader');
+        const totalMonthlyEl = document.getElementById('totalMonthly');
+        const averageDailyEl = document.getElementById('averageDaily');
+        let expenseChartInstance = null;
         let progressInterval;
 
-        // --- INISIALISASI ---
-        if (dateInput) {
-            dateInput.valueAsDate = new Date();
-        }
-        checkInitialSetup();
+        // --- FUNGSI-FUNGSI APLIKASI ---
 
-        // --- FUNGSI UTAMA ---
-        function checkInitialSetup() {
+        const checkInitialSetup = () => {
             const setupChoice = localStorage.getItem('geminiApiChoice');
             if (setupChoice) {
                 appContainer.style.display = 'block';
@@ -360,9 +376,9 @@
             } else {
                 welcomeModal.classList.add('show');
             }
-        }
+        };
 
-        async function saveDataToSheet(event) {
+        const saveDataToSheet = async (event) => {
             event.preventDefault();
             if (APPS_SCRIPT_URL === 'MASUKKAN_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI') {
                 showSetupGuide();
@@ -386,18 +402,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
-                showStatus('Data berhasil disimpan ke Google Sheet!', 'success');
+                showStatus('Data berhasil disimpan!', 'success');
                 expenseForm.reset();
                 if(dateInput) dateInput.valueAsDate = new Date();
             } catch (error) {
-                console.error('Error saving data to Sheet:', error);
-                showStatus('Terjadi kesalahan saat menyimpan data ke Sheet.', 'error');
+                console.error('Error saving data:', error);
+                showStatus('Gagal menyimpan data.', 'error');
             } finally {
                 hideLoader(true);
             }
-        }
+        };
         
-        function saveDataAsCSV(event) {
+        const saveDataAsCSV = (event) => {
             event.preventDefault();
             if (!expenseForm.checkValidity()) {
                 expenseForm.reportValidity();
@@ -420,19 +436,19 @@
             link.click();
             document.body.removeChild(link);
             showStatus('File CSV berhasil diunduh!', 'success');
-        }
+        };
 
-        function handleAiButtonClick(actionFn) {
+        const handleAiButtonClick = (actionFn) => {
             const apiChoice = localStorage.getItem('geminiApiChoice');
             if (apiChoice === 'api') {
                 actionFn();
             } else {
-                alert('Anda menggunakan mode Akun Gemini (Google), jadi harus Sign In menggunakan Gmail Anda.');
-                window.open('https://g.co/gemini/share/0c28a47f00a2', '_blank');
+                alert('Anda menggunakan mode Akun Gemini (Google). Silakan salin-tempel data atau upload struk Anda ke Gemini.');
+                window.open('https://g.co/gemini/share/9f19122ffff0', '_blank');
             }
-        }
+        };
 
-        function startSpeechRecognition() {
+        const startSpeechRecognition = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
                 showStatus('Maaf, browser Anda tidak mendukung input suara.', 'error');
@@ -440,8 +456,6 @@
             }
             const recognition = new SpeechRecognition();
             recognition.lang = 'id-ID';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
             recognition.start();
             showLoader('Mendengarkan...');
             recognition.onresult = (event) => {
@@ -449,17 +463,15 @@
                 if(loaderText) loaderText.textContent = 'Memproses hasil suara...';
                 parseTextWithGemini(speechResult);
             };
-            recognition.onspeechend = () => {
-                recognition.stop();
-            };
+            recognition.onspeechend = () => recognition.stop();
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 showStatus(`Error pengenalan suara: ${event.error}`, 'error');
                 hideLoader(false);
             };
-        }
+        };
 
-        function handleReceiptUpload(event) {
+        const handleReceiptUpload = (event) => {
             const file = event.target.files[0];
             if (!file) return;
             if (!file.type.startsWith('image/')) {
@@ -473,21 +485,21 @@
                 parseImageWithGemini(base64Image);
             };
             reader.readAsDataURL(file);
-        }
+        };
 
-        async function parseTextWithGemini(text) {
+        const parseTextWithGemini = async (text) => {
             const todayDate = new Date().toISOString().split('T')[0];
             const prompt = `Anda adalah asisten entri data cerdas. Hari ini adalah ${todayDate}. Tugas Anda adalah mengekstrak informasi dari teks pengguna, termasuk tanggal transaksi. Anda harus bisa menginterpretasikan frasa waktu relatif seperti 'kemarin', 'dua hari yang lalu', dll., berdasarkan tanggal hari ini. Jika tidak ada tanggal yang disebutkan, gunakan tanggal hari ini. Selalu kembalikan tanggal dalam format YYYY-MM-DD. Ekstrak juga nama toko, daftar item, dan total harga. Teks: "${text}"`;
             await callGemini(prompt);
-        }
+        };
 
-        async function parseImageWithGemini(base64ImageData) {
+        const parseImageWithGemini = async (base64ImageData) => {
             const todayDate = new Date().toISOString().split('T')[0];
             const prompt = `Anda adalah pemindai struk ahli. Ekstrak nama toko, tanggal transaksi, daftar item yang dibeli, dan jumlah total akhir dari gambar struk ini. Jika tanggal tidak ada, gunakan tanggal hari ini (${todayDate}). Selalu kembalikan tanggal dalam format YYYY-MM-DD. Berikan output dalam format JSON yang ketat.`;
             await callGemini(prompt, base64ImageData);
-        }
+        };
 
-        async function callGemini(prompt, base64ImageData = null) {
+        const callGemini = async (prompt, base64ImageData = null) => {
             const geminiApiKey = localStorage.getItem('userGeminiApiKey') || "";
             if (!geminiApiKey) {
                 showStatus('Kunci API belum diatur. Buka Pengaturan (ikon gerigi).', 'error');
@@ -531,9 +543,9 @@
                     const jsonText = result.candidates[0].content.parts[0].text;
                     const data = JSON.parse(jsonText);
                     populateForm(data);
-                    showStatus('Data berhasil diekstrak. Silakan periksa dan simpan.', 'success');
+                    showStatus('Data berhasil diekstrak.', 'success');
                 } else {
-                    throw new Error("Tidak ada konten yang valid dalam respons API.");
+                    throw new Error("Respons API tidak valid.");
                 }
             } catch (error) {
                 console.error('Gemini API error:', error);
@@ -541,14 +553,14 @@
             } finally {
                 hideLoader(true);
             }
-        }
+        };
 
-        function populateForm(data) {
+        const populateForm = (data) => {
             if (data.tanggal) {
                 try {
                     dateInput.value = new Date(data.tanggal).toISOString().split('T')[0];
                 } catch(e) {
-                    console.warn("Format tanggal tidak valid, menggunakan tanggal hari ini:", data.tanggal);
+                    console.warn("Format tanggal tidak valid:", data.tanggal);
                     if(dateInput) dateInput.valueAsDate = new Date();
                 }
             } else {
@@ -557,16 +569,14 @@
             if(storeInput) storeInput.value = data.toko || '';
             if(itemsInput) itemsInput.value = data.items ? data.items.join(', ') : '';
             if(totalInput) totalInput.value = data.total || '';
-        }
+        };
 
-        // --- FUNGSI BANTU (HELPER) ---
-        function showLoader(message) {
+        const showLoader = (message) => {
             if(statusMessage) statusMessage.style.display = 'none';
             if(loaderContainer) loaderContainer.classList.remove('hidden');
             if(loaderText) loaderText.textContent = message;
             
-            const allButtons = [recordBtn, uploadBtn, scanBtn, saveBtn, csvBtn];
-            allButtons.forEach(btn => {
+            [recordBtn, uploadBtn, scanBtn, saveBtn, csvBtn].forEach(btn => {
                 if(btn) btn.disabled = true;
             });
 
@@ -581,9 +591,9 @@
                 }
                 if(progressBar) progressBar.style.width = width + '%';
             }, 200);
-        }
+        };
 
-        function hideLoader(isSuccess) {
+        const hideLoader = (isSuccess) => {
             clearInterval(progressInterval);
             if(progressBar) progressBar.style.width = isSuccess ? '100%' : progressBar.style.width;
 
@@ -591,14 +601,13 @@
                 if(loaderContainer) loaderContainer.classList.add('hidden');
                 if(progressBar) progressBar.style.width = '0%';
                 
-                const allButtons = [recordBtn, uploadBtn, scanBtn, saveBtn, csvBtn];
-                allButtons.forEach(btn => {
+                [recordBtn, uploadBtn, scanBtn, saveBtn, csvBtn].forEach(btn => {
                     if(btn) btn.disabled = false;
                 });
             }, 500);
-        }
+        };
 
-        function showStatus(message, type = 'info') {
+        const showStatus = (message, type = 'info') => {
             if(!statusMessage) return;
             statusMessage.textContent = message;
             statusMessage.className = 'mt-6 text-center text-lg';
@@ -606,21 +615,21 @@
             else if (type === 'error') statusMessage.classList.add('text-red-600');
             statusMessage.style.display = 'block';
             setTimeout(() => { statusMessage.style.display = 'none'; }, 5000);
-        }
+        };
         
-        function showSetupGuide() {
+        const showSetupGuide = () => {
             const existingUrl = localStorage.getItem('googleSheetWebAppUrl');
             if (existingUrl && webAppUrlInput) {
                 webAppUrlInput.value = existingUrl;
             }
             if(setupModal) setupModal.classList.add('show');
-        }
+        };
         
-        function hideSetupGuide() {
+        const hideSetupGuide = () => {
             if(setupModal) setupModal.classList.remove('show');
-        }
+        };
 
-        function saveConfiguration() {
+        const saveConfiguration = () => {
             if(!webAppUrlInput) return;
             const url = webAppUrlInput.value.trim();
             if (!url || !url.startsWith("https://script.google.com/")) {
@@ -631,9 +640,9 @@
             APPS_SCRIPT_URL = url;
             hideSetupGuide();
             showStatus('Konfigurasi Google Sheet berhasil disimpan!', 'success');
-        }
+        };
         
-        function saveApiKey() {
+        const saveApiKey = () => {
             const key = geminiApiKeyInput.value.trim();
             if (!key) {
                 alert('Kunci API tidak boleh kosong.');
@@ -644,9 +653,9 @@
             showStatus('Kunci API berhasil disimpan.', 'success');
             apiModal.classList.remove('show');
             appContainer.style.display = 'block';
-        }
+        };
 
-        function copyCode() {
+        const copyCode = () => {
             const codeContainer = document.getElementById('appsScriptCodeContainer');
             if(!codeContainer) return;
             const codeToCopy = codeContainer.innerText;
@@ -665,62 +674,188 @@
                 alert('Gagal menyalin kode. Silakan salin secara manual.');
             }
             document.body.removeChild(textArea);
-        }
+        };
+
+        const fetchAndDisplayData = async () => {
+            if (APPS_SCRIPT_URL === 'MASUKKAN_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI') {
+                showSetupGuide();
+                return;
+            }
+            dataLoader.style.display = 'block';
+            dataDisplayContainer.style.display = 'none';
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL);
+                if (!response.ok) {
+                    throw new Error(`Server merespons dengan status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.status === 'success') {
+                    if (result.data && result.data.length > 0) {
+                        displayDataAsTable(result.data);
+                        calculateAndDisplayStats(result.data);
+                        displayDataAsChart(result.data);
+                        dataDisplayContainer.style.display = 'block';
+                    } else {
+                        tableContainer.innerHTML = '<p class="text-center text-gray-500">Belum ada data pengeluaran.</p>';
+                        totalMonthlyEl.textContent = 'Rp 0';
+                        averageDailyEl.textContent = 'Rp 0';
+                        if(expenseChartInstance) expenseChartInstance.destroy();
+                        dataDisplayContainer.style.display = 'block';
+                    }
+                } else {
+                    throw new Error(result.message || 'Gagal memuat data dari skrip.');
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                let userFriendlyError = 'Gagal memuat data. ';
+                if (error.message.includes('Failed to fetch')) {
+                    userFriendlyError += 'Ini mungkin karena masalah koneksi atau konfigurasi Web App. Pastikan Anda telah melakukan "Deploy > New deployment" di Apps Script dan mengatur akses ke "Anyone".';
+                } else {
+                    userFriendlyError += error.message;
+                }
+                showStatus(userFriendlyError, 'error');
+            } finally {
+                dataLoader.style.display = 'none';
+            }
+        };
+
+        const displayDataAsTable = (data) => {
+            let tableHTML = `<table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Toko</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total (Rp)</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">`;
+            
+            const sortedData = data.sort((a, b) => new Date(b['Tanggal Pembelian']) - new Date(a['Tanggal Pembelian']));
+
+            sortedData.forEach(row => {
+                const formattedDate = new Date(row['Tanggal Pembelian']).toLocaleDateString('id-ID');
+                const formattedTotal = new Intl.NumberFormat('id-ID').format(row['Total Pengeluaran']);
+                tableHTML += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formattedDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row['Toko/Tempat']}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">${formattedTotal}</td>
+                    </tr>`;
+            });
+
+            tableHTML += `</tbody></table>`;
+            tableContainer.innerHTML = tableHTML;
+        };
+
+        const calculateAndDisplayStats = (data) => {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            const thisMonthExpenses = data.filter(row => {
+                const expenseDate = new Date(row['Tanggal Pembelian']);
+                return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+            });
+
+            const totalMonthly = thisMonthExpenses.reduce((sum, row) => sum + (parseFloat(row['Total Pengeluaran']) || 0), 0);
+            
+            const daysWithExpenses = new Set(thisMonthExpenses.map(row => new Date(row['Tanggal Pembelian']).getDate())).size;
+            const averageDaily = daysWithExpenses > 0 ? totalMonthly / daysWithExpenses : 0;
+
+            totalMonthlyEl.textContent = `Rp ${new Intl.NumberFormat('id-ID').format(totalMonthly.toFixed(0))}`;
+            averageDailyEl.textContent = `Rp ${new Intl.NumberFormat('id-ID').format(averageDaily.toFixed(0))}`;
+        };
+
+        const displayDataAsChart = (data) => {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            const spendingByDay = data
+                .filter(row => {
+                    const expenseDate = new Date(row['Tanggal Pembelian']);
+                    return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+                })
+                .reduce((acc, row) => {
+                    const day = new Date(row['Tanggal Pembelian']).getDate();
+                    const amount = parseFloat(row['Total Pengeluaran']) || 0;
+                    acc[day] = (acc[day] || 0) + amount;
+                    return acc;
+                }, {});
+
+            const labels = Object.keys(spendingByDay).map(day => `Tgl ${day}`);
+            const values = Object.values(spendingByDay);
+
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy();
+            }
+
+            expenseChartInstance = new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Pengeluaran (Rp)',
+                        data: values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true } },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        };
 
         // --- EVENT LISTENERS ---
-        if(saveBtn) saveBtn.addEventListener('click', saveDataToSheet);
-        if(csvBtn) csvBtn.addEventListener('click', saveDataAsCSV);
-        if(recordBtn) recordBtn.addEventListener('click', () => handleAiButtonClick(startSpeechRecognition));
+        saveBtn.addEventListener('click', saveDataToSheet);
+        csvBtn.addEventListener('click', saveDataAsCSV);
+        recordBtn.addEventListener('click', () => handleAiButtonClick(startSpeechRecognition));
         
-        if(uploadBtn) uploadBtn.addEventListener('click', () => {
+        uploadBtn.addEventListener('click', () => {
             handleAiButtonClick(() => {
-                if(receiptInput) {
-                    receiptInput.removeAttribute('capture');
-                    receiptInput.click();
-                }
+                receiptInput.removeAttribute('capture');
+                receiptInput.click();
             });
         });
 
-        if(scanBtn) scanBtn.addEventListener('click', () => {
+        scanBtn.addEventListener('click', () => {
             handleAiButtonClick(() => {
-                if(receiptInput) {
-                    receiptInput.setAttribute('capture', 'environment');
-                    receiptInput.click();
-                }
+                receiptInput.setAttribute('capture', 'environment');
+                receiptInput.click();
             });
         });
 
-        if(receiptInput) receiptInput.addEventListener('change', handleReceiptUpload);
-        
-        // Modal Listeners
-        if(closeModalBtn) closeModalBtn.addEventListener('click', hideSetupGuide);
-        if(saveConfigBtn) saveConfigBtn.addEventListener('click', saveConfiguration);
-        if(copyCodeBtn) copyCodeBtn.addEventListener('click', copyCode);
-        if(setupModal) setupModal.addEventListener('click', (e) => {
-            if (e.target === setupModal) {
-                hideSetupGuide();
-            }
+        receiptInput.addEventListener('change', handleReceiptUpload);
+        closeModalBtn.addEventListener('click', hideSetupGuide);
+        saveConfigBtn.addEventListener('click', saveConfiguration);
+        copyCodeBtn.addEventListener('click', copyCode);
+        setupModal.addEventListener('click', (e) => {
+            if (e.target === setupModal) hideSetupGuide();
         });
-
-        // Welcome Modal Listeners
-        if (welcomeApiBtn) welcomeApiBtn.addEventListener('click', () => {
+        welcomeApiBtn.addEventListener('click', () => {
             welcomeModal.classList.remove('show');
             apiModal.classList.add('show');
         });
-        if (welcomeManualBtn) welcomeManualBtn.addEventListener('click', () => {
+        welcomeManualBtn.addEventListener('click', () => {
             localStorage.setItem('geminiApiChoice', 'manual');
             checkInitialSetup();
         });
-
-        // API Modal Listeners
-        if(apiSettingsBtn) apiSettingsBtn.addEventListener('click', () => apiModal.classList.add('show'));
-        if(closeApiModalBtn) closeApiModalBtn.addEventListener('click', () => apiModal.classList.remove('show'));
-        if(apiModal) apiModal.addEventListener('click', (e) => {
-            if (e.target === apiModal) {
-                apiModal.classList.remove('show');
-            }
+        apiSettingsBtn.addEventListener('click', () => apiModal.classList.add('show'));
+        closeApiModalBtn.addEventListener('click', () => apiModal.classList.remove('show'));
+        apiModal.addEventListener('click', (e) => {
+            if (e.target === apiModal) apiModal.classList.remove('show');
         });
-        if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', saveApiKey);
+        saveApiKeyBtn.addEventListener('click', saveApiKey);
+        showDataBtn.addEventListener('click', fetchAndDisplayData);
+        
+        // --- INISIALISASI ---
+        checkInitialSetup();
     });
     </script>
 </body>
