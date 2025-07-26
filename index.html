@@ -180,15 +180,14 @@
     <!-- Modal Sambutan Awal -->
     <div id="welcomeModal" class="modal-overlay">
         <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4">Selamat Datang!</h2>
-            <p class="mb-4 text-gray-700">Aplikasi ini menggunakan AI untuk mempermudah pencatatan via suara dan scan struk.</p>
-            <p class="mb-6 text-gray-700">Karena di-hosting di GitHub Pages, fitur AI otomatis memerlukan Kunci API Gemini dari Anda. Silakan pilih salah satu opsi di bawah:</p>
+            <h2 class="text-2xl font-bold mb-4">Si Pintar Pencatat Pengeluaran!</h2>
+            <p class="mb-6 text-gray-700">Aplikasi ini menggunakan kekuatan Gemini Ai sehingga pencatatan pengeluaran dengan input suara atau scan kamera atau scan image struk belanja menjadi lebih akurat. Karena menggunakan Ai, maka pilihan penggunaan silahkan pilih di bawah ini:</p>
             <div class="space-y-4">
                 <button id="welcomeApiBtn" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Gunakan Kunci API Gemini (Otomatis)
+                    Gunakan Kunci API Gemini
                 </button>
                 <button id="welcomeManualBtn" class="w-full bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
-                    Gunakan Akun Gemini (Manual)
+                    Gunakan Akun Gemini (Google)
                 </button>
             </div>
         </div>
@@ -428,8 +427,8 @@
             if (apiChoice === 'api') {
                 actionFn();
             } else {
-                alert('Anda menggunakan mode manual. Silakan salin-tempel data atau upload struk Anda ke Akun Gemini (Google).');
-                window.open('https://g.co/gemini/share/9f19122ffff0', '_blank');
+                alert('Anda menggunakan mode Akun Gemini (Google), jadi harus Sign In menggunakan Gmail Anda.');
+                window.open('https://g.co/gemini/share/0c28a47f00a2', '_blank');
             }
         }
 
@@ -477,12 +476,14 @@
         }
 
         async function parseTextWithGemini(text) {
-            const prompt = `Anda adalah asisten entri data yang cerdas. Ekstrak informasi berikut dari teks ini dan berikan dalam format JSON: nama toko, daftar item, dan total harga. Teks: "${text}"`;
+            const todayDate = new Date().toISOString().split('T')[0];
+            const prompt = `Anda adalah asisten entri data cerdas. Hari ini adalah ${todayDate}. Tugas Anda adalah mengekstrak informasi dari teks pengguna, termasuk tanggal transaksi. Anda harus bisa menginterpretasikan frasa waktu relatif seperti 'kemarin', 'dua hari yang lalu', dll., berdasarkan tanggal hari ini. Jika tidak ada tanggal yang disebutkan, gunakan tanggal hari ini. Selalu kembalikan tanggal dalam format YYYY-MM-DD. Ekstrak juga nama toko, daftar item, dan total harga. Teks: "${text}"`;
             await callGemini(prompt);
         }
 
         async function parseImageWithGemini(base64ImageData) {
-            const prompt = "Anda adalah pemindai struk ahli. Ekstrak nama toko, tanggal transaksi, daftar item yang dibeli, dan jumlah total akhir dari gambar struk ini. Jika tanggal tidak ada, gunakan tanggal hari ini. Berikan output dalam format JSON yang ketat.";
+            const todayDate = new Date().toISOString().split('T')[0];
+            const prompt = `Anda adalah pemindai struk ahli. Ekstrak nama toko, tanggal transaksi, daftar item yang dibeli, dan jumlah total akhir dari gambar struk ini. Jika tanggal tidak ada, gunakan tanggal hari ini (${todayDate}). Selalu kembalikan tanggal dalam format YYYY-MM-DD. Berikan output dalam format JSON yang ketat.`;
             await callGemini(prompt, base64ImageData);
         }
 
@@ -708,10 +709,7 @@
         });
         if (welcomeManualBtn) welcomeManualBtn.addEventListener('click', () => {
             localStorage.setItem('geminiApiChoice', 'manual');
-            localStorage.setItem('hasVisited', 'true');
-            welcomeModal.classList.remove('show');
-            appContainer.style.display = 'block';
-            showStatus('Mode manual dipilih. Tombol AI akan membuka Gemini.', 'info');
+            checkInitialSetup();
         });
 
         // API Modal Listeners
