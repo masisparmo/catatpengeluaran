@@ -15,9 +15,9 @@ Akses ke aplikasi ini silahkan klik >> [https://catatpengeluaran.isparmo.com/](h
 
 *   **Pilihan Mode Penggunaan AI**:
     
-*   **Mode Otomatis**: Dengan mengonfigurasi Kunci API Gemini, fitur input suara dan scan struk bekerja secara mulus di dalam aplikasi.
+*   **Mode API Gemini**: Dengan mengonfigurasi Kunci API Gemini, ada fitur untuk melihat riwayat pengeluaran langusung diaplikasi.
     
-*   **Mode Manual**: Tanpa Kunci API, pengguna diarahkan ke akun Gemini mereka untuk melakukan analisis data, memberikan alternatif yang tetap fungsional.
+*   **Mode Akun Gemini**: Tanpa Kunci API, pengguna diarahkan ke akun Gemini mereka untuk melakukan analisis data, memberikan alternatif yang tetap fungsional.
     
 *   **Tiga Metode Input Cerdas**:
     
